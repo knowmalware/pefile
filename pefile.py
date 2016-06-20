@@ -933,14 +933,12 @@ class Structure(object):
             for key in keys:
 
                 val = getattr(self, key)
-                if isinstance(val, int) or isinstance(val, int):
+                if isinstance(val, (int, long)):
                     if key == 'TimeDateStamp' or key == 'dwTimeStamp':
                         try:
                             val = '0x%-8X [%s UTC]' % (val, time.asctime(time.gmtime(val)))
                         except exceptions.ValueError as e:
                             val = '0x%-8X [INVALID TIME]' % val
-                else:
-                    val = bytes([b for b in val if b != 0])
 
                 dump_dict[key] = {'FileOffset': self.__field_offsets__[key] + self.__file_offset__,
                                   'Offset': self.__field_offsets__[key],
@@ -4698,6 +4696,15 @@ class PE(object):
             for idx in range(len(self.OPTIONAL_HEADER.DATA_DIRECTORY)):
                 directory = self.OPTIONAL_HEADER.DATA_DIRECTORY[idx]
                 dump_dict['Directories'].append(directory.dump_dict())
+
+        def convert_char(char):
+            if char in string.ascii_letters or char in string.digits or char in string.punctuation or char in string.whitespace:
+                return char
+            else:
+                return r'\x%02x' % ord(char)
+
+        def convert_to_printable(s):
+            return ''.join([convert_char(c) for c in s])
 
         if hasattr(self, 'VS_VERSIONINFO'):
             dump_dict['Version Information'] = list()
